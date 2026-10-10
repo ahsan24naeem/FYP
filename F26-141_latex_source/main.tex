@@ -1,0 +1,124 @@
+\documentclass{FastFyp}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{float}
+\usepackage[table]{xcolor}
+\usepackage{multirow}
+\usepackage{microtype}
+\usepackage{rotating}
+\usepackage{xurl}
+\usepackage{needspace}
+\widowpenalty=10000 \clubpenalty=10000
+\renewcommand{\floatpagefraction}{0.6}
+\renewcommand{\textfraction}{0.1}
+\setlist{nosep, leftmargin=*}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+
+% ---------- Use-case table macro (template-compliant fields) ----------
+\newenvironment{usecase}[2]{%
+  \begin{table}[H]\centering\small
+  \caption{#1}\label{#2}
+  \begin{tabular}{|L{5.2cm}|L{\dimexpr\textwidth-5.2cm-4\tabcolsep-3\arrayrulewidth\relax}|}\hline}
+  {\end{tabular}\end{table}}
+\newcommand{\ucrow}[2]{\textbf{#1} & #2 \\ \hline}
+\newcommand{\ucflow}[1]{\multicolumn{2}{|l|}{\textbf{#1}} \\ \hline \textit{Actor Action} & \textit{System Response} \\ \hline}
+\newcommand{\ucstep}[2]{\textit{#1} & #2 \\ \hline}
+
+% ---------- Metadata ----------
+\newcommand{\supervisor}{Dr. Zareen Alamgir}
+\newcommand{\university}{National University of Computer and Emerging Sciences, Lahore}
+\newcommand{\fyptitle}{KhetLens: Offline, Context-Aware Crop Disease Diagnosis for Pakistani Farmers}
+\newcommand{\degree}{BS}
+\newcommand{\Studentone}{Ahsan Naeem \hspace{1.2em} 23L-0517 \hspace{1.2em} BS(CS)}
+\newcommand{\Studenttwo}{Muhammad Taha Atif \hspace{1.2em} 23L-0657 \hspace{1.2em} BS(CS)}
+\newcommand{\Studentthree}{Aaiza Iqbal \hspace{1.2em} 23L-0616 \hspace{1.2em} BS(CS)}
+\date{October 2026}
+\renewcommand{\contentsname}{Table of Contents}
+
+\begin{document}
+
+\makeatletter
+    \begin{titlepage}
+        \includegraphics[width=0.2\linewidth]{Figures/nulogo.png}\hfill
+        \includegraphics[width=0.2\linewidth]{Figures/fast.png}\\
+        \begin{center}
+            {\large\bfseries \university}\\[5ex]
+            \includegraphics[width=0.36\linewidth]{Figures/fastlogo.png}\\[5ex]
+            {\huge \bfseries KhetLens}\\[1.5ex]
+            {\Large \bfseries Offline, Context-Aware Crop Disease Diagnosis\\ for Pakistani Farmers}\\[6ex]
+            {\Studentone}\\[0.8ex]{\Studenttwo}\\[0.8ex]{\Studentthree}\\[3ex]
+            {Supervisor: \supervisor} \\[1ex]
+            {Industry Partner: Fatima Fertiliser Company Limited}\\[5ex]
+            {Final Year Project -- I \quad (FYP ID: F26-141)}\\
+            {Deliverable II: FYP Report}\\[1ex]
+            {\large \@date}
+        \end{center}
+    \end{titlepage}
+\makeatother
+\frontmatter
+
+\newpage \thispagestyle{empty} \mbox{} \newpage
+
+\pagestyle{empty}
+\section*{\begin{center}{Anti-Plagiarism Declaration} \end{center}}
+This is to declare that the above publication was produced under the:
+\begin{flushleft}
+\bf Title: \fyptitle
+\end{flushleft}
+is the sole contribution of the author(s), and no part hereof has been reproduced as it is the basis (cut and paste) that can be considered Plagiarism. All referenced parts have been used to argue the idea and cited properly. I/We will be responsible and liable for any consequence if a violation of this declaration is determined.
+\\[4ex]
+Date: ..........................
+
+\begin{flushright}
+Name: Ahsan Naeem
+\\[3ex]
+Signature: ..........................
+\\[6ex]
+Name: Muhammad Taha Atif
+\\[3ex]
+Signature: ..........................
+\\[6ex]
+Name: Aaiza Iqbal
+\\[3ex]
+Signature: ..........................
+\end{flushright}
+
+\vspace{3 cm}
+\hrule
+
+\section*{Author's Declaration}
+We, the authors of this report, declare that the work presented herein is our own and has not been submitted or presented previously to any other institution or organization for the award of any degree or qualification. Where the work of others has been used, it has been acknowledged and cited.
+\pagebreak
+
+\input{chapters/00_frontmatter}
+
+\pagestyle{fancy}
+\tableofcontents
+\pagebreak
+\addcontentsline{toc}{chapter}{List of Figures}
+\listoffigures
+\pagebreak
+\addcontentsline{toc}{chapter}{List of Tables}
+{\setlength{\cftbeforetabskip}{3pt}\listoftables}
+
+\mainmatter
+
+\input{chapters/01_introduction}
+\input{chapters/02_project_vision}
+\input{chapters/03_literature_review}
+\input{chapters/04_srs}
+\input{chapters/05_methodology}
+\input{chapters/06_design}
+
+\clearpage
+\addcontentsline{toc}{chapter}{Bibliography}
+{
+\bibliographystyle{ieeetr}
+\bibliography{fypbib}
+}
+
+\end{document}

@@ -1,0 +1,49 @@
+\chapter{Introduction}
+\label{ch:intro}
+
+Crop disease is a routine part of farming in Punjab, and for wheat, maize and cotton it is also one of the main reasons a season's yield falls short. Wheat alone covers close to ten million hectares in Pakistan, and maize and cotton together add another four million~\cite{fao_pakistan}. Most leaf diseases of these crops are visible early and are treatable if they are recognised in time. The difficulty for a smallholder is recognising them: an agricultural officer may be far away, a neighbour's guess may be wrong, and a dealer has products to sell. The one tool many farming households now have is a smartphone.
+
+Deep learning has made it possible to recognise plant diseases from photographs with high accuracy. Since the PlantVillage work of 2016 reported over 99\% accuracy on a large set of leaf images~\cite{mohanty2016}, many studies have reported similar results. The same body of work also showed something that matters more for a real product: models trained on clean, laboratory-style photographs do much worse on photographs taken in actual fields, with cluttered backgrounds, uneven light and mixed symptoms~\cite{xu2024datasets,singh2020plantdoc}. A useful farmer-facing application therefore has to be trained and tested on field conditions, has to run on the kind of phone farmers own, has to work without an internet connection, and has to speak the farmer's language.
+
+KhetLens is our response to this. It is a mobile application that diagnoses leaf diseases of wheat, maize and cotton from a photograph of the plant, whether a close-up of a leaf or a wider shot showing several leaves, entirely on the phone, and presents the result with treatment guidance in English, Urdu and Punjabi. We have scoped it as a complete product rather than a model alone, and as a research and development project, because several of its parts address open questions: how much locally collected field data is needed, whether simple context such as recent weather can help separate diseases that look alike, and how a small on-device model can reliably recognise when it should not answer. We are carrying out the project with Fatima Fertiliser Company Limited, who are supporting us with field access and agronomic expertise.
+
+\section{Purpose of this Document}
+This document presents the vision, requirements, methodology and design of KhetLens as they stand at this deliverable. Its purpose is to describe clearly what we are building and why, to show that the design rests on the relevant literature, and to provide the specification against which the implementation will be developed and tested.
+
+The project is guided by four research questions:
+\needspace{6\baselineskip}
+\begin{itemize}
+  \item \textbf{RQ1.} How well does a compact, on-device model for wheat, maize and cotton leaf disease generalise from public datasets to field photographs, and what training choices improve that generalisation?
+  \item \textbf{RQ2.} How many locally collected field photographs per class are needed, on top of public datasets, before additional collection gives little further improvement?
+  \item \textbf{RQ3.} Does combining the image result with recent local weather improve the separation of visually similar conditions?
+  \item \textbf{RQ4.} Can a lightweight uncertainty check running on the phone reliably recognise poor photographs, unsupported crops and unfamiliar diseases?
+\end{itemize}
+
+Our methods are empirical: we assemble image datasets, train and compress a classifier, measure it on field photographs and on the target class of phone, and run the controlled experiments described in Chapter~\ref{ch:method}. The report describes the design as planned; the implementation, test cases and results will follow in the subsequent deliverables.
+
+\section{Intended Audience}
+The report is written for three readers. The first is the FYP evaluation panel and our supervisor at the FAST School of Computing, who will assess whether the problem is well defined, the literature review is sound, the requirements are complete and the design is implementable; Chapters~\ref{ch:lit}, \ref{ch:method} and \ref{ch:design} are written mainly for them. The second is our industry partner, whose agronomists will review the disease list and the treatment content; Chapters~\ref{ch:vision} and \ref{ch:srs} describe the product in terms they can check without the technical detail. The third is ourselves, for whom Chapters~\ref{ch:srs} to \ref{ch:design} are the working specification.
+
+\section{Definitions, Acronyms, and Abbreviations}
+\label{sec:acronyms}
+\begin{description}[style=nextline, leftmargin=0pt, itemsep=1pt]
+  \item[Abiotic stress] Plant damage from non-living causes such as heat or nutrient shortage, which can resemble disease on a leaf.
+  \item[API] Application Programming Interface.
+  \item[CLCuV] Cotton Leaf Curl Virus.
+  \item[CNN] Convolutional Neural Network.
+  \item[Content pack] The bundle of disease, treatment and audio content shipped with the app and updated independently of the code.
+  \item[FYP] Final Year Project.
+  \item[GLS] Grey Leaf Spot (maize).
+  \item[INT8] 8-bit integer representation used for compressed neural networks.
+  \item[KD] Knowledge Distillation: training a small model to imitate a larger one.
+  \item[NLB] Northern Leaf Blight (maize).
+  \item[OOD] Out-of-Distribution: an input unlike the training data.
+  \item[OTP] One-Time Password, used for sign-in.
+  \item[SDG] Sustainable Development Goal.
+  \item[Shahmukhi] The Perso-Arabic script used for Punjabi in Pakistan.
+  \item[SRS] Software Requirement Specification.
+  \item[TFLite / LiteRT] Google's runtime for running neural networks on mobile devices.
+\end{description}
+
+\section{Conclusion}
+This chapter has introduced the problem KhetLens addresses, the purpose and readers of the report, and the terms used in it. The rest of the report is organised as follows. Chapter~\ref{ch:vision} presents the project vision: the problem domain, problem statement and elaboration, goals, scope, SDG, constraints, business opportunity and stakeholders. Chapter~\ref{ch:lit} reviews the literature and related applications and summarises them in a table. Chapter~\ref{ch:srs} gives the software requirements: features, functional and non-functional requirements, use cases, hardware and software, the user interface, the database design and the risk analysis. Chapter~\ref{ch:method} describes our proposed approach and methodology. Chapter~\ref{ch:design} presents the high-level and low-level design.

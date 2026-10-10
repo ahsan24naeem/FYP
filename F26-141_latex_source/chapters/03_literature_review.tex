@@ -1,0 +1,145 @@
+\chapter{Literature Review / Related Work}
+\label{ch:lit}
+
+Our design draws on five areas of prior work: how image-based plant disease classifiers behave on field photographs and the datasets built for that setting; compact neural networks and their compression for phones; methods for detecting out-of-distribution inputs and calibrating confidence; the use of environmental context in diagnosis; and the data efficiency of transfer and few-shot learning. We also review the main deployed applications and the regional work on our three crops. For each work we summarise what was done, note its strengths and limitations, and state how it relates to KhetLens. A summary table closes the chapter.
+
+\section{Definitions, Acronyms, and Abbreviations}
+In addition to the terms in Section~\ref{sec:acronyms}: \textbf{in-distribution} data resembles the training data, while \textbf{out-of-distribution} (OOD) data does not; \textbf{open-set recognition} is classification with an explicit ``unknown'' outcome; \textbf{domain shift} is the change in image statistics between training and deployment, here between laboratory and field photographs; a \textbf{learning curve} plots accuracy against the number of training examples; \textbf{late fusion} combines the outputs of separate models or signals.
+
+\section{Detailed Literature Review}
+The review is organised into six categories that follow the sub-problems of Chapter~\ref{ch:vision}.
+
+\subsection{Field conditions and field datasets}
+\label{sec:lit-gap}
+\textbf{Hughes and Salath\'e~\cite{hughes2015plantvillage}; Mohanty et al.~\cite{mohanty2016}.} PlantVillage released over 54,000 leaf images of 14 crops and 38 classes photographed against plain backgrounds, and Mohanty et al.\ trained standard CNNs on it to 99.35\% held-out accuracy. The paper also reported a sharp drop when the model was applied to images from other sources. \emph{Analysis:} the dataset's scale launched the research area, and its uniform style is also its main limitation. \emph{Relation to our work:} PlantVillage provides our maize classes and a pre-training corpus; its limitation is why we evaluate only on field photographs.
+
+\textbf{Noyan~\cite{noyan2022bias}; Xu et al.~\cite{xu2024datasets}.} Noyan showed that a classifier trained on only a few background pixels of PlantVillage images still performs far above chance, revealing a background--label correlation. Xu et al.\ surveyed around forty public datasets and found that most were built for benchmarking rather than for realistic deployment, with large accuracy differences between laboratory and field variants. \emph{Analysis:} both are careful studies of dataset bias; Xu et al.\ also note that even expert labellers disagree on some wheat images. \emph{Relation:} they motivate our background-aware augmentation and our use of field-only test sets.
+
+\textbf{Singh et al.~\cite{singh2020plantdoc}; Wei et al.~\cite{wei2024plantwild}; Ahmad et al.~\cite{ahmad2021cds}.} PlantDoc provides about 2,600 field images across 13 species, and fine-tuning on it instead of PlantVillage improved field accuracy by up to 31 percentage points. PlantWild, with over 18,000 in-the-wild images and 89 classes, is the largest public field benchmark. CD\&S provides over 4,000 field images of three maize diseases with severity labels. \emph{Analysis:} these datasets show that accuracy on field images is substantially lower than on laboratory images even for strong models, and that mixed-source training helps. \emph{Relation:} PlantDoc and CD\&S supply maize field images for KhetLens, and PlantWild is used for plant-domain pre-training.
+
+\textbf{FieldPlant and the controlled-versus-field generalisation study~\cite{fieldplant2023,gen2023fieldcond}.} Both works build dedicated field datasets and measure how models trained under controlled conditions perform on them; the generalisation study finds that adding field images to training and removing backgrounds both improve field performance. \emph{Analysis:} they are the most direct measurements of the question our first research question asks. \emph{Relation:} they justify our mixed-source training, background augmentation and field-only test set.
+
+\subsection{Compact on-device models and compression}
+\label{sec:lit-mobile}
+\textbf{Howard et al.~\cite{howard2019mnv3}.} MobileNetV3 combines hardware-aware architecture search with efficient building blocks and has well-documented latency on mobile CPUs. \emph{Analysis:} it remains the most practical family for CPU-only phones, while newer hybrid transformer designs trade some latency for accuracy. \emph{Relation:} MobileNetV3-Large is our deployed model, with a smaller MobileNetV3 and a hybrid as benchmarked alternatives.
+
+\textbf{Kumar et al.~\cite{kumar2025benchmark}; Tonmoy et al.~\cite{tonmoy2025mobileplantvit}; Khan et al.~\cite{khan2023edge}.} Kumar et al.\ benchmarked mobile CNNs on over 76,000 images and 101 classes, finding MobileNetV3-Large at 92.6\% with a 21.6\,MB float model and EfficientNet-B1 at 94.7\% with a larger model. MobilePlantViT, a hybrid with under one million parameters, generalised well across datasets of very different sizes. Khan et al.\ quantised MobileNetV3-Small to 8-bit integers with under one million parameters and no accuracy loss on PlantVillage. \emph{Analysis:} together these give a clear accuracy-versus-size picture across the architectures we are choosing between, though they report desktop rather than phone latency. \emph{Relation:} they support MobileNetV3-Large as a good balance and motivate our own on-phone measurements.
+
+\textbf{Hinton et al.~\cite{hinton2015kd}; Krishnamoorthi~\cite{krishnamoorthi2018quant}.} Knowledge distillation trains a small student on a larger teacher's softened outputs, typically recovering a few points of accuracy; the quantisation whitepaper shows that calibrated post-training quantisation stays within about 2\% of floating point and quantisation-aware training within about 1\%. \emph{Analysis:} these are the standard, well-tested recipes for shipping a small accurate model. \emph{Relation:} KhetLens distils its student from a larger teacher and uses quantisation-aware training with a calibration set that includes field images.
+
+\textbf{Zhang et al.~\cite{zhangq2022mobilebench}; Ramcharan et al.~\cite{ramcharan2019cassava}.} A benchmark of mobile inference libraries across ten phones found large latency differences between libraries for the same model, and INT8 speed-ups on CPU that vary widely. Ramcharan et al.\ ran a MobileNet detector for cassava diseases on a budget Android phone and evaluated it on real-world images, where accuracy was lower than on the test set and lowest for mild symptoms. \emph{Analysis:} both show that performance has to be measured on the target device and on real photographs rather than assumed. \emph{Relation:} we benchmark our runtime options on entry-level phones and evaluate on field photographs.
+
+\subsection{Out-of-distribution detection and calibration}
+\label{sec:lit-ood}
+\textbf{Hendrycks and Gimpel~\cite{hendrycks2017msp}; Guo et al.~\cite{guo2017calibration}.} The maximum softmax probability is the baseline OOD score, and a single temperature parameter fitted on validation data restores calibration at no inference cost. \emph{Analysis:} simple and widely reproduced. \emph{Relation:} we report the softmax baseline for every OOD result and apply temperature scaling to all deployed confidences.
+
+\textbf{Lee et al.~\cite{lee2018mahalanobis}; Sun et al.~\cite{sun2021react}; Liu et al.~\cite{liu2020energy}.} The Mahalanobis detector scores inputs by their distance to class-conditional Gaussians in feature space; ReAct clips unusually high activations and improves most detectors; the energy score replaces softmax with the log-sum-exp of the logits. \emph{Analysis:} all are inexpensive at inference and need only a few stored statistics, which suits a phone; all are weaker on inputs that are semantically close to the training classes. \emph{Relation:} our novelty check uses a Mahalanobis distance on clipped features, and we compare energy with the softmax baseline for the unknown-disease check.
+
+\textbf{Fuentes et al.~\cite{fuentes2021openset}; Meng et al.~\cite{meng2023osr}.} Open-set recognition has been applied to tomato disease, where a model trained on one domain had to recognise unknown classes in another~\cite{fuentes2021openset}, and to multi-dataset plant recognition, where plant-domain pre-training and a margin-based loss tightened the known classes and improved unknown detection~\cite{meng2023osr}. \emph{Analysis:} these establish that the classification loss and pre-training matter for unknown detection, not only the score. \emph{Relation:} we adopt a margin-based loss and calibrate thresholds on field photographs.
+
+\textbf{Erg\"un et al.~\cite{ergun2026grape}.} On grape disease under field conditions, temperature scaling reduced the calibration error of MobileNetV3-Large and EfficientNet-B0 several-fold. \emph{Analysis:} the study uses the same backbones we use and separates calibration from accuracy cleanly. \emph{Relation:} it sets the calibration approach of our uncertainty check.
+
+\textbf{Ahmed et al.~\cite{ahmed2022agropath}.} AgroPath, developed in Lahore, filters blurred, defocused and poorly lit leaf photographs before classification with a small quality-assessment model and reports high accuracy on the photographs it retains. \emph{Analysis:} it shows that an image-quality gate is practical in a field setting. \emph{Relation:} it is the basis of the quality stage of our uncertainty check.
+
+\textbf{Mrisho et al.~\cite{mrisho2020nuru}; Sottocornola et al.~\cite{sottocornola2022dssapple}.} The field validation of PlantVillage Nuru in East Africa found that photographing several leaves per plant raised accuracy substantially over a single leaf, and that the app compared well with extension officers and farmers. DSSApple diagnoses post-harvest apple disease through rounds of picture-based questions. \emph{Analysis:} both show that simple interaction, more photographs or a few picture questions, is an effective way to reduce uncertainty. \emph{Relation:} they are the basis of our ``take more photos'' and follow-up question steps.
+
+\subsection{Context-aware diagnosis}
+\label{sec:lit-context}
+\textbf{Picon et al.~\cite{picon2019cropcond}.} A crop-conditional CNN trained on more than 100,000 smartphone field images of five crops, including wheat and maize, raised balanced accuracy from 0.93 to 0.98 by injecting the crop identity into the network. \emph{Analysis:} the clearest demonstration that cheap metadata improves field diagnosis, on a proprietary dataset. \emph{Relation:} our shared backbone with a crop head and per-crop disease heads follows this design.
+
+\textbf{Xu and Wang~\cite{xuwang2025fusion}.} A recent wheat study fused image features with temperature, humidity and soil-moisture readings and reported high accuracy on three classes from a small dataset. \emph{Analysis:} weather carries signal, but learned fusion needs large paired datasets to be reliable, and missing context must be handled explicitly. \emph{Relation:} these are the reasons we fuse weather through a rule-based prior that falls back gracefully when weather is unavailable.
+
+\textbf{Ali et al.~\cite{ali2023striperust}; Ahmad et al.~\cite{ahmad2018clcuv}.} A regression model fitted on five years of data from Layyah, Punjab, predicts stripe rust severity from temperature, rainfall and humidity and identifies the conducive ranges; a Pakistani model of cotton leaf curl relates disease intensity to humidity, rainfall and whitefly populations. \emph{Analysis:} regional epidemiological studies that quantify exactly the weather--disease relationships we need. \emph{Relation:} they supply the ranges in our weather plausibility table.
+
+\subsection{Data efficiency}
+\label{sec:lit-data}
+\textbf{Beck et al.~\cite{beck2022curves}.} Accuracy on crop images follows a power law in training-set size, and label noise flattens the curve. \textbf{Argüeso et al.~\cite{argueso2020fewshot}; Xu et al.~\cite{xu2022transfer}.} A Siamese few-shot network reached about 80\% with 15 images per class and 90\% with 80; a transformer pre-trained on millions of plant images reached much higher few-shot accuracy than an ImageNet model. \emph{Analysis:} these provide comparable shot grids and the functional form for a learning curve. \emph{Relation:} our field-data study uses a matching ladder of images per class and fits the same curve, and plant-domain pre-training is one of our benchmarked options.
+
+\subsection{Work on wheat, maize and cotton in the region}
+\label{sec:lit-region}
+\textbf{Wheat.} The NWRD dataset from NUST provides pixel-level rust annotations on Pakistani wheat~\cite{anwar2023nwrd}; Malik and Hayat classified wheat leaves into five classes, including both rusts and powdery mildew, from phone photographs collected in Punjab and KP~\cite{malik2025wheatpk}; Long et al.\ classified five wheat conditions from a large set of field and glasshouse images and released a public test subset~\cite{long2024ukwheat}. \emph{Relation:} together these cover our wheat classes and show that phone capture in Punjab works well.
+
+\textbf{Maize.} Published work on maize converges on the three leaf diseases we cover, common rust, northern leaf blight and grey leaf spot, which between them are covered by PlantVillage, PlantDoc and CD\&S~\cite{hughes2015plantvillage,singh2020plantdoc,ahmad2021cds}. \emph{Relation:} this confirms the class set we use for maize.
+
+\textbf{Cotton.} Anwar et al.\ trained transfer-learning models on a mix of Pakistani field and online images of healthy, bacterial blight and leaf curl leaves~\cite{anwarcotton2023pk}; Ahmad et al.\ staged leaf curl severity in Bahawalpur and Multan from RGB and multispectral images~\cite{ahmad2024clcuvfusion}; the CoSEV dataset provides Pakistani field photographs with severity stages~\cite{noon2023cosev}; SAR-CLD-2024 provides over two thousand field photographs of seven cotton conditions~\cite{sarcld2024}; and Wang et al.\ built a compact cotton network on an eleven-class dataset~\cite{wang2025cotton}. \emph{Relation:} these supply all six of our cotton classes.
+
+\section{Application Review}
+\label{sec:apps}
+\textbf{Plantix~\cite{plantix}.} The most widely used commercial crop-diagnosis app, covering many crops and diseases with a community forum and product suggestions, used mainly in India. \emph{Strengths:} breadth, polish, large user base. \emph{Limitations:} diagnosis is performed online; languages and products target the Indian market. \emph{Relevance:} the benchmark for breadth and user experience; KhetLens differentiates on offline operation, Pakistani languages and uncertainty handling.
+
+\textbf{PlantVillage Nuru~\cite{mrisho2020nuru}.} An offline object-detection app for cassava diseases validated in the field in East Africa, where it compared favourably with extension officers and farmers and benefited from photographing several leaves. \emph{Strengths:} offline, field-validated. \emph{Limitations:} one crop; weaker on mild symptoms. \emph{Relevance:} the closest precedent for KhetLens and the source of our multi-photo step.
+
+\textbf{Offline prototypes~\cite{offlinemnv3app2026}.} Recent conference work describes offline mobile prototypes built on MobileNetV3 and TensorFlow Lite. \emph{Relevance:} they confirm that the engineering path we follow is practical; of the prototypes we reviewed, none combines context fusion with uncertainty handling or targets Urdu and Punjabi.
+
+\section{Literature Review Summary Table}
+\label{sec:littable}
+Table~\ref{tab:litsummary} summarises the research literature in the format required for research projects, and Table~\ref{tab:appsummary} the applications.
+
+\small
+\begin{longtable}{|L{2.6cm}|L{4.0cm}|L{4.2cm}|L{3.4cm}|}
+\caption{Summary of research literature reviewed.}
+\label{tab:litsummary}\\
+\hline
+\textbf{Author} & \textbf{Method} & \textbf{Results} & \textbf{Limitations} \\ \hline
+\endfirsthead
+\multicolumn{4}{l}{\small\textit{Table \thetable\ continued}}\\ \hline
+\textbf{Author} & \textbf{Method} & \textbf{Results} & \textbf{Limitations} \\ \hline
+\endhead
+\hline \multicolumn{4}{r}{\small\textit{continued on next page}} \\
+\endfoot
+\hline
+\endlastfoot
+Mohanty et al.~\cite{mohanty2016} & CNNs on PlantVillage, 38 classes & 99.35\% held-out accuracy & Laboratory images only \\ \hline
+Noyan~\cite{noyan2022bias} & Classifier on background pixels & Far above chance; background bias & One dataset \\ \hline
+Xu et al.~\cite{xu2024datasets} & Survey of $\sim$40 datasets & Large lab-to-field differences & Review; second-hand figures \\ \hline
+Singh et al.~\cite{singh2020plantdoc} & PlantDoc field dataset; PV pre-train, PD fine-tune & Up to +31 points field accuracy & Small; web-scraped \\ \hline
+Wei et al.~\cite{wei2024plantwild} & PlantWild, 18,542 wild images, 89 classes & Best baseline 67.2\% & Web-sourced \\ \hline
+Ahmad et al.~\cite{ahmad2021cds} & CD\&S maize field dataset with severity & 4,455 images & Three diseases \\ \hline
+Howard et al.~\cite{howard2019mnv3} & MobileNetV3 architecture search & Best latency--accuracy on mobile CPUs & General, not agri \\ \hline
+Kumar et al.~\cite{kumar2025benchmark} & Mobile CNN benchmark, 101 classes & MNv3-L 92.6\%; EffNet-B1 94.7\% & No phone latency \\ \hline
+Tonmoy et al.~\cite{tonmoy2025mobileplantvit} & Sub-1M hybrid ViT & Generalises across datasets of different sizes & No device data \\ \hline
+Khan et al.~\cite{khan2023edge} & MNv3-Small, INT8, ONNX & 99.5\% PV; $<$1M params & Desktop CPU \\ \hline
+Hinton et al.~\cite{hinton2015kd} & Knowledge distillation & Student recovers most of the teacher's accuracy & General \\ \hline
+Krishnamoorthi~\cite{krishnamoorthi2018quant} & PTQ and QAT whitepaper & PTQ within 2\%, QAT within 1\% & General \\ \hline
+Zhang et al.~\cite{zhangq2022mobilebench} & Mobile DL library benchmark, 10 phones & Large library-dependent latency differences & 2022 versions \\ \hline
+Ramcharan et al.~\cite{ramcharan2019cassava} & MobileNet detector on a budget phone & Real-world accuracy below test set & One crop \\ \hline
+Hendrycks \& Gimpel~\cite{hendrycks2017msp} & Softmax baseline for OOD & Baseline across tasks & Over-confident \\ \hline
+Guo et al.~\cite{guo2017calibration} & Temperature scaling & Restores calibration & Not domain shift \\ \hline
+Lee et al.~\cite{lee2018mahalanobis} & Mahalanobis on features & Needs only class statistics & Gaussian assumption \\ \hline
+Sun et al.~\cite{sun2021react} & ReAct activation clipping & Large FPR reduction & Clipping level must be chosen \\ \hline
+Liu et al.~\cite{liu2020energy} & Energy score & Beats softmax & Threshold tuning \\ \hline
+Meng et al.~\cite{meng2023osr} & Plant open-set recognition & AUROC 93.7 & Heavy backbone \\ \hline
+Erg\"un et al.~\cite{ergun2026grape} & Calibration of MNv3-L / EffNet-B0, field grape & Several-fold ECE reduction & One crop \\ \hline
+Ahmed et al.~\cite{ahmed2022agropath} & Image-quality gate before classification & Higher accuracy on retained images & Post-filter figure \\ \hline
+Mrisho et al.~\cite{mrisho2020nuru} & Field validation of Nuru, East Africa & Multi-leaf capture raises accuracy & Small sample \\ \hline
+Picon et al.~\cite{picon2019cropcond} & Crop-conditional CNN, 5 crops & Balanced acc.\ 0.93 $\to$ 0.98 & Proprietary data \\ \hline
+Xu \& Wang~\cite{xuwang2025fusion} & Image + sensor fusion, wheat & High accuracy on 3 classes & Small dataset \\ \hline
+Ali et al.~\cite{ali2023striperust} & Weather regression of stripe rust, Layyah & $R^2$ 90.7\%; conducive ranges & Region-specific \\ \hline
+Ahmad et al.~\cite{ahmad2018clcuv} & CLCuV vs weather, Pakistan & Humidity, rain, whitefly drive intensity & Monthly resolution \\ \hline
+Beck et al.~\cite{beck2022curves} & Learning curves on crop images & Power law; noise flattens curve & Species, not disease \\ \hline
+Argüeso et al.~\cite{argueso2020fewshot} & Siamese few-shot & 80\% @15, 90\% @80 per class & Not field images \\ \hline
+Xu et al.~\cite{xu2022transfer} & Plant-domain pre-trained ViT, few-shot & 86.3\% @20-shot & Not edge-friendly \\ \hline
+Malik \& Hayat~\cite{malik2025wheatpk} & CNNs on Punjab/KP wheat phone photos & 95\% & Small original set \\ \hline
+Anwar et al.~\cite{anwarcotton2023pk} & Transfer learning, Pakistani cotton & 96\% at 256 px & Two diseases \\ \hline
+Ahmad et al.~\cite{ahmad2024clcuvfusion} & RGB + multispectral CLCuV severity & RGB 81\%; fused 96\% & Needs extra sensor \\ \hline
+Long et al.~\cite{long2024ukwheat} & CNNs on 19k wheat field/glasshouse images & 97.1\%; public test set & Different climate \\ \hline
+Wang et al.~\cite{wang2025cotton} & Compact cotton network, 11 classes & 98.4\%; 4.8 MB & Random split; no separate field test \\ \hline
+\end{longtable}
+\normalsize
+
+\begin{table}[H]
+\centering\small
+\caption{Summary of related applications.}
+\label{tab:appsummary}
+\begin{tabularx}{\textwidth}{|L{2.6cm}|Y|Y|Y|}
+\hline
+\textbf{Application} & \textbf{Features} & \textbf{Relevance} & \textbf{Limitations} \\ \hline
+Plantix~\cite{plantix} & Multi-crop photo diagnosis, community, product links & Breadth and UX benchmark & Online diagnosis; Indian-market languages \\ \hline
+PlantVillage Nuru~\cite{mrisho2020nuru} & Offline cassava detection & Field-validated offline precedent & One crop; weak on mild symptoms \\ \hline
+Offline MobileNetV3 prototype~\cite{offlinemnv3app2026} & On-device classification & Same engineering path & Single crop set; no context or uncertainty handling \\ \hline
+\end{tabularx}
+\end{table}
+
+\section{Conclusion}
+\label{sec:gaps}
+The literature gives us a solid foundation for each part of KhetLens: field datasets and training practices that generalise beyond the laboratory, compact architectures and compression recipes that run on phones, inexpensive uncertainty measures, regional weather--disease relationships, and interaction patterns that farmers have been shown to use. It also shows where our project adds value. The existing offline prototypes address one part of the problem at a time; KhetLens brings on-device inference, weather context and uncertainty handling together for three crops. Weather has been used in learned fusion with large datasets; we use it as a rule-based prior that needs no paired data and can be reviewed by agronomists. Learning curves have been measured on laboratory sets; we measure them on field photographs for our crops. And the field validation of farmer-facing apps remains rare; we plan ours with our industry partner. The next chapter turns these findings into requirements.
